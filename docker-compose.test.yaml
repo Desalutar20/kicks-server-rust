@@ -1,0 +1,35 @@
+services:
+  kicks-api-test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: testing
+    ports:
+      - "4000:4000"
+    environment:
+      DATABASE__HOST: kicks-postgres-test
+      DATABASE__PORT: 5432
+      DATABASE__PASSWORD: password
+      DATABASE__USER: postgres
+      DATABASE__NAME: kicks
+      DATABASE_URL: postgres://postgres:password@kicks-postgres-test:5432/kicks
+      DOCKER_HOST: unix:///var/run/docker.sock
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      kicks-postgres-test:
+        condition: service_healthy
+
+  kicks-postgres-test:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: kicks
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d kicks"]
+      interval: 5s
+      timeout: 5s
+      retries: 5

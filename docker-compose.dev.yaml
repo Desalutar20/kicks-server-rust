@@ -1,0 +1,63 @@
+services:
+  kicks-api-dev:
+    container_name: kicks-api-dev
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    ports:
+      - "4000:4000"
+    environment:
+      APPLICATION__HOST: 0.0.0.0
+      APPLICATION__PRETTY_LOG: true
+      APPLICATION__LOG_LEVEL: debug
+      DATABASE__HOST: kicks-postgres-dev
+      DATABASE__PORT: 5432
+      DATABASE__PASSWORD: password
+      DATABASE__USER: postgres
+      DATABASE__NAME: kicks
+      DATABASE_URL: postgres://postgres:password@kicks-postgres-dev:5432/kicks
+      REDIS__HOST: kicks-redis-dev
+      REDIS__PORT: 6379
+      REDIS__PASSWORD: password
+    depends_on:
+      kicks-postgres-dev:
+        condition: service_healthy
+      kicks-redis-dev:
+        condition: service_healthy
+
+  kicks-postgres-dev:
+    container_name: kicks-postgres-dev
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: kicks
+    volumes:
+      - kicks-postgres-data-dev:/var/lib/postgresql
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d kicks"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  kicks-redis-dev:
+    container_name: kicks-redis-dev
+    image: redis:8-alpine
+    restart: always
+    command: redis-server --requirepass password
+    volumes:
+      - kicks-redis-data-dev:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a password ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    ports:
+      - "6380:6379"
+
+volumes:
+  kicks-postgres-data-dev:
+  kicks-redis-data-dev:

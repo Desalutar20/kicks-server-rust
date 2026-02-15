@@ -1,0 +1,32 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n              UPDATE users\n              SET first_name = COALESCE($1, first_name),\n                  last_name = COALESCE($2, last_name),\n                  password = COALESCE($3, password),\n                  google_id = COALESCE($4, google_id),\n                  facebook_id = COALESCE($5, facebook_id),\n                  gender = COALESCE($6, gender),\n                  is_verified = COALESCE($7, is_verified),\n                  updated_at = NOW()\n              WHERE id = $8\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        {
+          "Custom": {
+            "name": "user_gender",
+            "kind": {
+              "Enum": [
+                "male",
+                "female",
+                "other"
+              ]
+            }
+          }
+        },
+        "Bool",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "e5cbbb3fe2dc3e0d659b55eebd1966b88991f794b0d4b1470c75c221011dffe2"
+}

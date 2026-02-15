@@ -1,0 +1,27 @@
+mod email_address;
+mod facebook_id;
+mod first_name;
+mod google_id;
+mod hashed_password;
+mod last_name;
+mod new_user;
+mod password;
+mod update_user;
+mod user;
+mod user_gender;
+mod user_id;
+mod user_role;
+
+pub use email_address::*;
+pub use facebook_id::*;
+pub use first_name::*;
+pub use google_id::*;
+pub use hashed_password::*;
+pub use last_name::*;
+pub use new_user::*;
+pub use password::*;
+pub use update_user::*;
+pub use user::*;
+pub use user_gender::*;
+pub use user_id::*;
+pub use user_role::*;

@@ -1,0 +1,8 @@
+target
+scripts
+Dockerfile
+.dockerignore
+.git
+.gitignore
+.vscode
+.env
