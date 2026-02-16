@@ -54,8 +54,12 @@ where
 {
     LazyLock::force(&TRACING);
 
-    unsafe {
-        env::set_var("APPLICATION__ENV", "test");
+    let var = env::var("APPLICATION__ENV").unwrap_or("".into());
+
+    if var != "test" && var != "test-ci" {
+        unsafe {
+            env::set_var("APPLICATION__ENV", "test");
+        }
     }
 
     let mut config = Configuration::new();

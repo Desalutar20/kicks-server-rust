@@ -134,6 +134,26 @@ impl AuthModule {
                 )),
             )
             .route(
+                "/facebook",
+                get(get_facebook_redirect_url_v1).layer(GovernorLayer::new(
+                    GovernorConfigBuilder::default()
+                        .per_second(60)
+                        .burst_size(ratelimit.sign_in)
+                        .finish()
+                        .unwrap(),
+                )),
+            )
+            .route(
+                "/facebook/callback",
+                get(facebook_sign_in_v1).layer(GovernorLayer::new(
+                    GovernorConfigBuilder::default()
+                        .per_second(60)
+                        .burst_size(ratelimit.sign_in)
+                        .finish()
+                        .unwrap(),
+                )),
+            )
+            .route(
                 "/logout",
                 post(logout_v1)
                     .route_layer(middleware::from_fn_with_state(state.clone(), authenticate))

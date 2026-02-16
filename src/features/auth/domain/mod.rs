@@ -1,5 +1,6 @@
 mod email_address;
 mod facebook_id;
+mod facebook_oauth2;
 mod first_name;
 mod google_id;
 mod google_oauth2;
@@ -17,6 +18,7 @@ mod user_role;
 
 pub use email_address::*;
 pub use facebook_id::*;
+pub use facebook_oauth2::*;
 pub use first_name::*;
 pub use google_id::*;
 pub use google_oauth2::*;

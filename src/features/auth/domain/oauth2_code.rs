@@ -1,13 +1,13 @@
 use crate::features::shared::TrimmedString;
 
-pub type OAuth2Code = TrimmedString<0, 100>;
+pub type OAuth2Code = TrimmedString<0, 500>;
 #[cfg(test)]
 mod test {
     use super::*;
 
     #[test]
     fn code_too_long_should_fail_parse() {
-        let id = "a".repeat(101);
+        let id = "a".repeat(501);
         assert!(OAuth2Code::parse(id).is_err())
     }
 

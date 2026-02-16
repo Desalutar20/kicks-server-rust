@@ -13,7 +13,10 @@ mod verify_account_handler;
 pub use forgot_password_handler::forgot_password_v1;
 pub use get_me::get_me_v1;
 pub use logout_handler::logout_v1;
-pub use oauth2_handler::{get_google_redirect_url_v1, google_sign_in_v1};
+pub use oauth2_handler::{
+    facebook_sign_in_v1, get_facebook_redirect_url_v1, get_google_redirect_url_v1,
+    google_sign_in_v1,
+};
 pub use reset_password_handler::reset_password_v1;
 pub use sign_in_handler::{generate_session_cookie, sign_in_v1};
 pub use sign_up_handler::sign_up_v1;

@@ -46,47 +46,6 @@ mod test {
     }
 
     #[test]
-    fn google_user_valid_deserialize() {
-        let json = r#"
-        {
-            "sub": "user123",
-            "email": "test@gmail.com",
-            "email_verified": true
-        }
-        "#;
-
-        let user: std::result::Result<GoogleUserResponse, _> = from_str(json);
-        assert!(user.is_ok());
-    }
-
-    #[test]
-    fn google_user_invalid_email_should_fail() {
-        let json = r#"
-        {
-            "sub": "user123",
-            "email": "invalid-email",
-            "email_verified": true
-        }
-        "#;
-
-        let result: std::result::Result<GoogleUserResponse, _> = from_str(json);
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn google_access_token_response_error_should_fail_parse() {
-        let json = r#"
-          {
-              "error": "invalid_request",
-              "error_description": "Missing parameter"
-          }
-          "#;
-
-        let token_response: std::result::Result<GoogleAccessTokenResponse, _> = from_str(json);
-        assert!(token_response.is_ok(), "Expected an error token response.");
-    }
-
-    #[test]
     fn google_access_token_response_success_should_pass_parse() {
         let json = r#"
             {

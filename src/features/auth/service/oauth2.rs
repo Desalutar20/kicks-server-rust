@@ -3,13 +3,14 @@ use reqwest::Url;
 use crate::{
     Error, Result,
     features::auth::{
-        AuthService, GoogleAccessTokenError, GoogleAccessTokenResponse, GoogleAccessTokenSuccess,
-        GoogleUserResponse, NewUser, OAuth2Code, OAuth2State, UpdateUser,
+        AuthService, FacebookAccessTokenResponse, FacebookUserResponse, GoogleAccessTokenError,
+        GoogleAccessTokenResponse, GoogleAccessTokenSuccess, GoogleUserResponse, NewUser,
+        OAuth2Code, OAuth2State, UpdateUser,
     },
 };
 
 pub enum OAuth2Provider {
-    // Facebook,
+    Facebook,
     Google,
 }
 
@@ -33,6 +34,7 @@ impl AuthService {
 
         match provider {
             OAuth2Provider::Google => Ok((self.generate_google_redirect_url(&state)?, state)),
+            OAuth2Provider::Facebook => Ok((self.generate_facebook_redirect_url(&state)?, state)),
         }
     }
 
@@ -44,11 +46,16 @@ impl AuthService {
         if data.state != data.cookie_state {
             return Err(Error::Conflict("Something went wrong".into()));
         }
-        let (_, redirect_path) = data.state.into_inner();
+        let redirect_path = data.state.into_inner().1;
 
         match provider {
             OAuth2Provider::Google => {
                 let session_id = self.google_sign_in(data.code).await?;
+
+                Ok((session_id, redirect_path))
+            }
+            OAuth2Provider::Facebook => {
+                let session_id = self.facebook_sign_in(data.code).await?;
 
                 Ok((session_id, redirect_path))
             }
@@ -86,6 +93,52 @@ impl AuthService {
                             UpdateUser {
                                 google_id: Some(google_user.sub),
                                 facebook_id: None,
+                                first_name: None,
+                                last_name: None,
+                                gender: None,
+                                is_verified: Some(true),
+                                password: None,
+                            },
+                        )
+                        .await?;
+                }
+
+                self.generate_session(&db_user.id).await
+            }
+        }
+    }
+
+    async fn facebook_sign_in(&self, code: OAuth2Code) -> Result<String> {
+        let facebook_user = self.get_facebook_user(code).await?;
+        let db_user = self
+            .repository
+            .get_user_by_email(&facebook_user.email)
+            .await?;
+
+        match db_user {
+            None => {
+                let new_user = NewUser {
+                    email: facebook_user.email,
+                    facebook_id: Some(facebook_user.id),
+                    google_id: None,
+                    first_name: None,
+                    last_name: None,
+                    gender: None,
+                    hashed_password: None,
+                    is_verified: true,
+                };
+                let user_id = self.repository.create_user(&new_user).await?;
+
+                self.generate_session(&user_id).await
+            }
+            Some(db_user) => {
+                if db_user.google_id.is_none() {
+                    self.repository
+                        .update_user(
+                            &db_user.id,
+                            UpdateUser {
+                                facebook_id: Some(facebook_user.id),
+                                google_id: None,
                                 first_name: None,
                                 last_name: None,
                                 gender: None,
@@ -163,6 +216,67 @@ impl AuthService {
         }
     }
 
+    async fn get_facebook_user(&self, code: OAuth2Code) -> Result<FacebookUserResponse> {
+        let url = Url::parse_with_params(
+            "https://graph.facebook.com/v20.0/oauth/access_token",
+            &[
+                ("code", code.as_ref()),
+                ("client_id", self.oauth2_config.facebook_client_id.as_str()),
+                (
+                    "client_secret",
+                    self.oauth2_config.facebook_client_secret.as_str(),
+                ),
+                (
+                    "redirect_uri",
+                    self.oauth2_config.facebook_redirect_url.as_str(),
+                ),
+            ],
+        )
+        .map_err(|e| Error::Internal(format!("Failed to parse facebook url {e:?}")))?;
+
+        let token_response = self
+            .http_client
+            .get(url)
+            .send()
+            .await?
+            .json::<FacebookAccessTokenResponse>()
+            .await
+            .map_err(|e| Error::Internal(format!("Failed to get facebook user: {:?}", e)))?;
+
+        match token_response {
+            FacebookAccessTokenResponse::Error(err) => Err(Error::Internal(format!(
+                "Faceebook returned an error: {}",
+                err.error.message
+            ))),
+            FacebookAccessTokenResponse::Success(success) => {
+                let url = Url::parse_with_params(
+                    "https://graph.facebook.com/v20.0/me",
+                    &[
+                        ("fields", "id,first_name,last_name,gender,email"),
+                        ("access_token", success.access_token.as_ref()),
+                    ],
+                )
+                .map_err(|e| Error::Internal(format!("Failed to parse the Facebook API URL with the provided parameters. Error: {e:?}")))?;
+
+                let facebook_user = self
+                    .http_client
+                    .get(url)
+                    .send()
+                    .await?
+                    .json::<FacebookUserResponse>()
+                    .await
+                    .map_err(|e| {
+                        Error::Internal(format!(
+                            "Failed to deserialize Facebook user response: {:?}",
+                            e
+                        ))
+                    })?;
+
+                Ok(facebook_user)
+            }
+        }
+    }
+
     fn generate_google_redirect_url(&self, state: &OAuth2State) -> Result<Url> {
         let url = Url::parse_with_params(
             "https://accounts.google.com/o/oauth2/v2/auth",
@@ -179,6 +293,27 @@ impl AuthService {
             ],
         )
         .map_err(|e| Error::Internal(format!("Failed to generate google redirect url: {:?}", e)))?;
+
+        Ok(url)
+    }
+
+    fn generate_facebook_redirect_url(&self, state: &OAuth2State) -> Result<Url> {
+        let url = Url::parse_with_params(
+            "https://www.facebook.com/v20.0/dialog/oauth",
+            &[
+                ("client_id", self.oauth2_config.facebook_client_id.as_str()),
+                (
+                    "redirect_uri",
+                    self.oauth2_config.facebook_redirect_url.as_str(),
+                ),
+                ("response_type", "code"),
+                ("scope", "email"),
+                ("state", &state.to_string()),
+            ],
+        )
+        .map_err(|e| {
+            Error::Internal(format!("Failed to generate facebook redirect url: {:?}", e))
+        })?;
 
         Ok(url)
     }

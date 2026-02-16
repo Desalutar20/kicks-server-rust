@@ -9,4 +9,10 @@ pub struct OAuth2Config {
     pub google_client_secret: String,
     #[validate(length(min = 1))]
     pub google_redirect_url: String,
+    #[validate(length(min = 1))]
+    pub facebook_client_id: String,
+    #[validate(length(min = 1))]
+    pub facebook_client_secret: String,
+    #[validate(length(min = 1))]
+    pub facebook_redirect_url: String,
 }

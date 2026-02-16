@@ -11,22 +11,36 @@ env:
   CARGO_TERM_COLOR: always
   SQLX_VERSION: 0.8.6
   SQLX_FEATURES: "native-tls,postgres"
-  APP_USER: app
-  APP_USER_PWD: secret
   APP_DB_NAME: kicks
-  POSTGRES_PORT: 5432
+  APPLICATION__ENV: test-ci
+  SMTP__HOST: ${{ secrets.SMTP__HOST }}
+  SMTP__PORT: ${{ secrets.SMTP__PORT }}
+  SMTP__USER: ${{ secrets.SMTP__USER }}
+  SMTP__PASSWORD: ${{ secrets.SMTP__PASSWORD }}
+  SMTP__FROM: ${{ secrets.SMTP__FROM }}
+
+  CLOUDINARY__API_KEY: ${{ secrets.CLOUDINARY__API_KEY }}
+  CLOUDINARY__SECRET: ${{ secrets.CLOUDINARY__SECRET }}
+  CLOUDINARY__CLOUD_NAME: ${{ secrets.CLOUDINARY__CLOUD_NAME }}
+  CLOUDINARY__FOLDER: ${{ secrets.CLOUDINARY__FOLDER }}
+
+  OAUTH2__GOOGLE_CLIENT_ID: ${{ secrets.OAUTH2__GOOGLE_CLIENT_ID }}
+  OAUTH2__GOOGLE_CLIENT_SECRET: ${{ secrets.OAUTH2__GOOGLE_CLIENT_SECRET }}
+  OAUTH2__FACEBOOK_CLIENT_ID: ${{ secrets.OAUTH2__FACEBOOK_CLIENT_ID }}
+  OAUTH2__FACEBOOK_CLIENT_SECRET: ${{ secrets.OAUTH2__FACEBOOK_CLIENT_SECRET }}
 
 jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    environment: test
     services:
       postgres:
         image: postgres:18
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: password
-          POSTGRES_DB: kicks
+          POSTGRES_DB: ${{ env.APP_DB_NAME }}
         ports:
           - 5432:5432
     steps:
@@ -50,17 +64,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y postgresql-client
-
-      - name: Create app user in Postgres
-        run: |
-          CREATE_QUERY="CREATE USER ${APP_USER} WITH PASSWORD '${APP_USER_PWD}';"
-          PGPASSWORD="password" psql -U postgres -h localhost -c "${CREATE_QUERY}"
-
-          GRANT_QUERY="ALTER USER ${APP_USER} CREATEDB;"
-          PGPASSWORD="password" psql -U postgres -h localhost -c "${GRANT_QUERY}"
-
-      - name: Migrate database
-        run: SKIP_DOCKER=true DATABASE_NAME=${{ env.APP_DB_NAME }} ./scripts/init_db.sh
 
       - name: Run tests
         run: cargo test --workspace --all-targets
@@ -103,6 +106,7 @@ jobs:
   coverage:
     name: Code coverage
     runs-on: ubuntu-latest
+    environment: test
     services:
       postgres:
         image: postgres:18
@@ -133,14 +137,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y postgresql-client
-
-      - name: Create app user in Postgres
-        run: |
-          CREATE_QUERY="CREATE USER ${APP_USER} WITH PASSWORD '${APP_USER_PWD}';"
-          PGPASSWORD="password" psql -U postgres -h localhost -c "${CREATE_QUERY}"
-
-          GRANT_QUERY="ALTER USER ${APP_USER} CREATEDB;"
-          PGPASSWORD="password" psql -U postgres -h localhost -c "${GRANT_QUERY}"
 
       - name: Migrate database
         run: SKIP_DOCKER=true DATABASE_NAME=${{ env.APP_DB_NAME }} ./scripts/init_db.sh

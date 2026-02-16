@@ -25,3 +25,44 @@ pub fn verify(password: &str, password_hash: &str) -> Result<bool> {
 
     Ok(result)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_hash_and_verify_success() {
+        let password = "password";
+
+        let hash = hash_password(password);
+        assert!(hash.is_ok());
+
+        let result = verify(password, &hash.unwrap());
+        assert!(result.is_ok());
+        assert!(result.unwrap());
+    }
+
+    #[test]
+    fn test_verify_wrong_password() {
+        let password = "password";
+        let wrong_password = "wrongpassword";
+
+        let hash = hash_password(password);
+        assert!(hash.is_ok());
+
+        let result = verify(wrong_password, &hash.unwrap());
+        assert!(result.is_ok());
+        assert!(!result.unwrap());
+    }
+
+    #[test]
+    fn test_verify_invalid_hash() {
+        let password = "password";
+
+        let hash = hash_password(password);
+        assert!(hash.is_ok());
+
+        let result = verify(password, "invalid hash");
+        assert!(result.is_err());
+    }
+}

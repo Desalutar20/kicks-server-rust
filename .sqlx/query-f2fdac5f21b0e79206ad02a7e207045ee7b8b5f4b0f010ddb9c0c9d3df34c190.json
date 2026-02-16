@@ -1,0 +1,40 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                INSERT INTO users (email, password, first_name, last_name, gender, google_id, facebook_id, is_verified)\n                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)\n                RETURNING id;\n\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        {
+          "Custom": {
+            "name": "user_gender",
+            "kind": {
+              "Enum": [
+                "male",
+                "female",
+                "other"
+              ]
+            }
+          }
+        },
+        "Text",
+        "Text",
+        "Bool"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "f2fdac5f21b0e79206ad02a7e207045ee7b8b5f4b0f010ddb9c0c9d3df34c190"
+}
