@@ -11,6 +11,7 @@ use crate::{
 impl AuthService {
     pub async fn authenticate(&self, session_id: &str) -> Result<AppUser> {
         let mut redis = self.redis.clone();
+
         let user_id = redis
             .get_ex(
                 self.generate_redis_key(super::KeyType::Session, session_id),

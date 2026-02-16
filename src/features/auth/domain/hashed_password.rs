@@ -1,34 +1,6 @@
-use derive_more::{AsRef, Display};
-use unicode_segmentation::UnicodeSegmentation;
+use crate::features::shared::TrimmedString;
 
-use crate::{Error, Result};
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, AsRef, Display)]
-#[as_ref(str)]
-pub struct HashedPassword(String);
-
-impl HashedPassword {
-    pub fn parse(mut value: String) -> Result<Self> {
-        let mut errors = Vec::new();
-
-        value.retain(|c| !c.is_whitespace());
-        let char_count = value.graphemes(true).count();
-
-        if value.is_empty() {
-            errors.push("Hashed password cannot be empty".into());
-        }
-
-        if !(40..=100).contains(&char_count) {
-            errors.push("Hashed password must be between 40 and 100 characters".into());
-        }
-
-        if !errors.is_empty() {
-            return Err(Error::DomainValidationError(errors));
-        }
-
-        Ok(Self(value))
-    }
-}
+pub type HashedPassword = TrimmedString<40, 100>;
 
 #[cfg(test)]
 mod test {

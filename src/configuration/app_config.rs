@@ -37,6 +37,8 @@ pub struct ApplicationConfig {
     pub reset_password_path: String,
     #[validate(length(min = 1))]
     pub session_cookie_name: String,
+    #[validate(length(min = 1))]
+    pub oauth_state_cookie_name: String,
     pub cookie_secure: bool,
     #[validate(length(min = 40))]
     pub cookie_secret: String,
@@ -44,6 +46,8 @@ pub struct ApplicationConfig {
     pub account_verification_ttl_minutes: u64,
     #[validate(range(min = 1440, max = 43200))]
     pub session_ttl_minutes: u64,
+    #[validate(range(min = 1, max = 3))]
+    pub oauth_state_ttl_minutes: u64,
     #[validate(range(min = 5, max = 10))]
     pub reset_password_ttl_minutes: u64,
     pub log_level: LogLevel,

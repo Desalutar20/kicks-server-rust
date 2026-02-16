@@ -1,6 +1,5 @@
 use sqlx::{PgPool, query};
 use tracing::instrument;
-use uuid::Uuid;
 
 use crate::{
     Result,
@@ -9,7 +8,7 @@ use crate::{
         domain::{NewUser, UpdateUser, User, UserGender, UserID, UserRole},
     },
 };
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct AuthRepository {
     pool: PgPool,
 }
@@ -118,23 +117,27 @@ impl AuthRepository {
     }
 
     #[instrument(skip_all, name = "authrepository - create user")]
-    pub async fn create_user(&self, user: &NewUser) -> Result<Uuid> {
-        let rec = query!(
+    pub async fn create_user(&self, user: &NewUser) -> Result<UserID> {
+        let record = query!(
             r#"
-                INSERT INTO users (email, password, first_name, last_name, gender)
-                VALUES ($1, $2, $3, $4, $5)
+                INSERT INTO users (email, password, first_name, last_name, gender, google_id, facebook_id, is_verified)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                 RETURNING id;
+
             "#,
             user.email.as_ref(),
-            user.hashed_password.as_ref(),
+            user.hashed_password.as_ref().map(|p| p.as_ref()),
             user.first_name.as_ref().map(|f| f.as_ref()),
             user.last_name.as_ref().map(|l| l.as_ref()),
-            user.gender.clone() as Option<UserGender>
+            user.gender.clone() as Option<UserGender>,
+            user.google_id.as_ref().map(|g| g.as_ref()),
+            user.facebook_id.as_ref().map(|f| f.as_ref()),
+            user.is_verified
         )
         .fetch_one(&self.pool)
         .await?;
 
-        Ok(rec.id)
+        Ok(UserID::from(record.id))
     }
 
     #[instrument(skip_all, name = "authrepository - update user")]

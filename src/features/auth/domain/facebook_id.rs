@@ -1,34 +1,11 @@
-use derive_more::{AsRef, Display};
-use unicode_segmentation::UnicodeSegmentation;
+// use derive_more::{AsRef, Display};
+// use unicode_segmentation::UnicodeSegmentation;
 
-use crate::{Error, Result};
+// use crate::{Error, Result, features::shared::NonEmptyString};
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, AsRef, Display)]
-#[as_ref(str)]
-pub struct FacebookID(String);
+use crate::features::shared::TrimmedString;
 
-impl FacebookID {
-    pub fn parse(mut value: String) -> Result<Self> {
-        let mut errors: Vec<String> = Vec::new();
-
-        value.retain(|c| !c.is_whitespace());
-        let char_count = value.graphemes(true).count();
-
-        if value.is_empty() {
-            errors.push("Invalid facebook id".into());
-        }
-
-        if char_count > 50 {
-            errors.push("FacebookID must be less than or equal to 50 characters.".into());
-        }
-
-        if !errors.is_empty() {
-            return Err(Error::DomainValidationError(errors));
-        }
-
-        Ok(Self(value))
-    }
-}
+pub type FacebookID = TrimmedString<0, 50>;
 
 #[cfg(test)]
 mod test {

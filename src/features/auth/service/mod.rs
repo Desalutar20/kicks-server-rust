@@ -1,11 +1,13 @@
 use std::{fmt::Display, sync::Arc};
 
 use redis::{AsyncTypedCommands, aio::MultiplexedConnection};
+use reqwest::Client;
+use uuid::Uuid;
 
 use crate::{
     Error, Result,
     clients::email_client::EmailClient,
-    configuration::app_config::ApplicationConfig,
+    configuration::{app_config::ApplicationConfig, oauth2_config::OAuth2Config},
     features::auth::{
         EmailAddress, REDIS_ACCOUNT_VERIFICATION_PREFIX, REDIS_RESET_PASSWORD_PREFIX,
         REDIS_SESSION_PREFIX, User, UserID, repository::AuthRepository,
@@ -15,17 +17,19 @@ use crate::{
 pub mod authenticate;
 pub mod forgot_password;
 pub mod logout;
+pub mod oauth2;
 pub mod reset_password;
 pub mod sign_in;
 pub mod sign_up;
 pub mod verify_account;
 
-#[derive(Debug, Clone)]
 pub struct AuthService {
     app_config: ApplicationConfig,
+    oauth2_config: OAuth2Config,
     redis: MultiplexedConnection,
     email_client: Arc<EmailClient>,
     repository: AuthRepository,
+    http_client: Client,
 }
 
 #[derive(Debug)]
@@ -44,16 +48,35 @@ enum TokenType {
 impl AuthService {
     pub fn new(
         app_config: ApplicationConfig,
+        oauth2_config: OAuth2Config,
         redis: MultiplexedConnection,
         email_client: Arc<EmailClient>,
+        http_client: Client,
         repository: AuthRepository,
     ) -> Self {
         Self {
             app_config,
+            oauth2_config,
             redis,
             email_client,
+            http_client,
             repository,
         }
+    }
+
+    async fn generate_session(&self, user_id: &UserID) -> Result<String> {
+        let session_id = Uuid::new_v4().to_string();
+        let mut redis = self.redis.clone();
+
+        redis
+            .set_ex(
+                self.generate_redis_key(KeyType::Session, &session_id),
+                user_id.to_string(),
+                self.app_config.session_ttl_minutes * 60,
+            )
+            .await?;
+
+        Ok(session_id)
     }
 
     async fn get_user_by_token(

@@ -1,7 +1,10 @@
 use std::{net::SocketAddr, ops::Deref, sync::Arc};
 
 use axum::{
-    Extension, Json, Router, extract::FromRef, http::StatusCode, middleware::from_fn,
+    Json, Router,
+    extract::FromRef,
+    http::{HeaderName, StatusCode},
+    middleware::from_fn,
     response::IntoResponse,
 };
 use axum_extra::extract::cookie::Key;
@@ -13,13 +16,16 @@ use tower::ServiceBuilder;
 use tower_governor::{GovernorLayer, governor::GovernorConfigBuilder};
 use tracing::info;
 
-use axum::http::{HeaderValue, Method};
+use axum::http::{HeaderValue, Method, header};
 
 use tower_http::{compression::CompressionLayer, cors::CorsLayer, timeout::TimeoutLayer};
 
 use crate::{
     ErrorResponse, Result,
-    clients::{email_client::build_email_client, redis_client::build_redis_client},
+    clients::{
+        email_client::build_email_client, http_client::build_http_client,
+        redis_client::build_redis_client,
+    },
     configuration::{Configuration, app_config::ApplicationConfig},
     features::auth::{AuthModule, AuthService},
     middlewares::{error_logging, request_logging},
@@ -66,24 +72,27 @@ impl Application {
             PgPoolOptions::new().connect_lazy_with(config.database.connect_options());
         let redis_client = build_redis_client(&config.redis).await?;
         let email_client = build_email_client(&config.smtp, &config.application).await?;
+        let http_client = build_http_client()?;
 
         let auth_module = AuthModule::new(
             config.application.clone(),
+            config.oauth2.clone(),
             database_pool.clone(),
             redis_client.clone(),
             email_client,
+            http_client.clone(),
         );
 
         let state = AppState(Arc::new(InnerState {
             key: Key::from(config.application.cookie_secret.as_bytes()),
             config: config.application.clone(),
-            auth_service: auth_module.auth_service.clone(),
+            auth_service: auth_module.auth_service,
         }));
 
         let app = Router::new()
             .nest(
                 "/api/v1/auth",
-                auth_module.v1(state.clone(), &config.ratelimit),
+                AuthModule::v1(state.clone(), &config.ratelimit),
             )
             .with_state(state.clone())
             .fallback(handler_404)
@@ -114,14 +123,17 @@ impl Application {
                                     .parse::<HeaderValue>()
                                     .unwrap(),
                             )
+                            .allow_headers([
+                                header::CONTENT_TYPE,
+                                HeaderName::from_static("content-type"),
+                            ])
                             .allow_credentials(true),
                     )
                     .layer(CompressionLayer::new())
                     .layer(TimeoutLayer::with_status_code(
                         StatusCode::REQUEST_TIMEOUT,
                         Duration::from_secs(10),
-                    ))
-                    .layer(Extension(state.clone())),
+                    )),
             );
 
         Ok(Self {
@@ -188,7 +200,7 @@ async fn handler_404() -> impl IntoResponse {
     (
         StatusCode::NOT_FOUND,
         Json(ErrorResponse {
-            message: "Not found".to_string(),
+            error: "Not found".to_string(),
         }),
     )
 }

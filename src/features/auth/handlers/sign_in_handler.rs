@@ -1,7 +1,7 @@
 use axum::{Json, extract::State, http::StatusCode, response::IntoResponse};
 use axum_extra::extract::{
     SignedCookieJar, WithRejection,
-    cookie::{Cookie, Expiration},
+    cookie::{Cookie, Expiration, SameSite},
 };
 use serde::Deserialize;
 use time::{Duration, OffsetDateTime};
@@ -65,7 +65,7 @@ pub fn generate_session_cookie<'a>(session_id: String, config: &ApplicationConfi
     let expires = OffsetDateTime::now_utc() + Duration::minutes(config.session_ttl_minutes as i64);
 
     Cookie::build((config.session_cookie_name.to_string(), session_id))
-        .same_site(axum_extra::extract::cookie::SameSite::Strict)
+        .same_site(SameSite::Strict)
         .expires(Expiration::from(expires))
         .secure(config.cookie_secure)
         .path("/")

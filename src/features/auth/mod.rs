@@ -5,13 +5,17 @@ use axum::{
     routing::{get, post},
 };
 use redis::aio::MultiplexedConnection;
+use reqwest::Client;
 use sqlx::PgPool;
 use tower_governor::{GovernorLayer, governor::GovernorConfigBuilder};
 
 use crate::{
     app::AppState,
     clients::email_client::EmailClient,
-    configuration::{app_config::ApplicationConfig, ratelimit_config::RateLimitConfig},
+    configuration::{
+        app_config::ApplicationConfig, oauth2_config::OAuth2Config,
+        ratelimit_config::RateLimitConfig,
+    },
     features::auth::repository::AuthRepository,
     middlewares::authenticate,
 };
@@ -37,18 +41,27 @@ pub struct AuthModule {
 impl AuthModule {
     pub fn new(
         app_config: ApplicationConfig,
+        oauth2_config: OAuth2Config,
         pool: PgPool,
         redis: MultiplexedConnection,
         email_client: Arc<EmailClient>,
+        http_client: Client,
     ) -> Self {
         let repository = AuthRepository::new(pool);
 
         Self {
-            auth_service: AuthService::new(app_config, redis, email_client, repository),
+            auth_service: AuthService::new(
+                app_config,
+                oauth2_config,
+                redis,
+                email_client,
+                http_client,
+                repository,
+            ),
         }
     }
 
-    pub fn v1(&self, state: AppState, ratelimit: &RateLimitConfig) -> Router<AppState> {
+    pub fn v1(state: AppState, ratelimit: &RateLimitConfig) -> Router<AppState> {
         Router::new()
             .route(
                 "/sign-up",
@@ -96,6 +109,26 @@ impl AuthModule {
                     GovernorConfigBuilder::default()
                         .per_second(60)
                         .burst_size(ratelimit.reset_password)
+                        .finish()
+                        .unwrap(),
+                )),
+            )
+            .route(
+                "/google",
+                get(get_google_redirect_url_v1).layer(GovernorLayer::new(
+                    GovernorConfigBuilder::default()
+                        .per_second(60)
+                        .burst_size(ratelimit.sign_in)
+                        .finish()
+                        .unwrap(),
+                )),
+            )
+            .route(
+                "/google/callback",
+                get(google_sign_in_v1).layer(GovernorLayer::new(
+                    GovernorConfigBuilder::default()
+                        .per_second(60)
+                        .burst_size(ratelimit.sign_in)
                         .finish()
                         .unwrap(),
                 )),

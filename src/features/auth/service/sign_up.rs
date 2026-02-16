@@ -34,13 +34,16 @@ impl AuthService {
 
         let new_user = NewUser {
             email: data.email,
-            hashed_password: HashedPassword::parse(hashed_password)?,
+            hashed_password: Some(HashedPassword::parse(hashed_password)?),
             first_name: data.first_name,
             last_name: data.last_name,
             gender: data.gender,
+            google_id: None,
+            facebook_id: None,
+            is_verified: false,
         };
 
-        let new_user_id =
+        let user_id =
             self.repository
                 .create_user(&new_user)
                 .await
@@ -54,7 +57,7 @@ impl AuthService {
         let (redis_result, email_result) = join!(
             redis.set_ex(
                 self.generate_redis_key(KeyType::Verification, &token),
-                new_user_id.to_string(),
+                user_id.to_string(),
                 self.app_config.account_verification_ttl_minutes * 60,
             ),
             self.email_client

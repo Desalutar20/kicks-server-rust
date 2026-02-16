@@ -3,6 +3,7 @@ use std::{env, path::Path};
 pub mod app_config;
 pub mod cloudinary_config;
 pub mod database_config;
+pub mod oauth2_config;
 pub mod ratelimit_config;
 pub mod redis_config;
 pub mod smtp_config;
@@ -13,8 +14,8 @@ use validator::Validate;
 
 use crate::configuration::{
     app_config::ApplicationConfig, cloudinary_config::CloudinaryConfig,
-    database_config::DatabaseConfig, ratelimit_config::RateLimitConfig, redis_config::RedisConfig,
-    smtp_config::SmtpConfig,
+    database_config::DatabaseConfig, oauth2_config::OAuth2Config,
+    ratelimit_config::RateLimitConfig, redis_config::RedisConfig, smtp_config::SmtpConfig,
 };
 
 #[derive(Validate, Deserialize, Debug)]
@@ -29,6 +30,8 @@ pub struct Configuration {
     pub smtp: SmtpConfig,
     #[validate(nested)]
     pub cloudinary: CloudinaryConfig,
+    #[validate(nested)]
+    pub oauth2: OAuth2Config,
     #[validate(nested)]
     pub ratelimit: RateLimitConfig,
 }

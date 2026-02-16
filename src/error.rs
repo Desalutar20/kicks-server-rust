@@ -27,13 +27,16 @@ pub enum Error {
     Smtp(lettre::error::Error),
     #[from]
     Io(std::io::Error),
+    #[from]
+    Reqwest(reqwest::Error),
+    #[from]
     DomainValidationError(Vec<String>),
     ValidationErrors(HashMap<String, Vec<String>>),
 }
 
 #[derive(Serialize)]
 pub struct ErrorResponse {
-    pub message: String,
+    pub error: String,
 }
 
 impl IntoResponse for Error {
@@ -75,6 +78,11 @@ impl IntoResponse for Error {
                 "Internal server error".to_owned(),
                 Some(self),
             ),
+            Error::Reqwest(_) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Internal server error".to_owned(),
+                Some(self),
+            ),
             Error::DomainValidationError(errors) => {
                 (StatusCode::BAD_REQUEST, errors.join("\n"), None)
             }
@@ -87,7 +95,7 @@ impl IntoResponse for Error {
             }
         };
 
-        let error_response = ErrorResponse { message };
+        let error_response = ErrorResponse { error: message };
 
         let mut response = (status_code, axum::Json(error_response)).into_response();
         if let Some(err) = error {

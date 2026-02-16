@@ -1,6 +1,4 @@
-use redis::AsyncTypedCommands;
 use tracing::instrument;
-use uuid::Uuid;
 
 use crate::{
     Error, Result,
@@ -8,7 +6,7 @@ use crate::{
     features::{
         auth::{
             domain::{EmailAddress, Password},
-            service::{AuthService, KeyType},
+            service::AuthService,
         },
         shared::AppUser,
     },
@@ -42,16 +40,7 @@ impl AuthService {
             return Err(Error::Conflict("Invalid credentials".into()));
         }
 
-        let session_id = Uuid::new_v4().to_string();
-        let mut redis = self.redis.clone();
-
-        redis
-            .set_ex(
-                self.generate_redis_key(KeyType::Session, &session_id),
-                user.id.to_string(),
-                self.app_config.session_ttl_minutes * 60,
-            )
-            .await?;
+        let session_id = self.generate_session(&user.id).await?;
 
         Ok((user.into(), session_id))
     }
