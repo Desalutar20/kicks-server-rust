@@ -9,7 +9,7 @@ use crate::e2e::testapp::{TestApp, setup};
 
 #[tokio::test]
 pub async fn returns_200_when_request_is_valid() {
-    setup(async |mut app: TestApp| {
+    setup(async |app: TestApp| {
         let data = json!({
             "email": "test@gmail.com",
             "password": "s".repeat(PASSWORD_MIN_LENGTH),

@@ -1,3 +1,4 @@
+use kicksapi::features::auth::UserRole;
 use reqwest::{Response, StatusCode};
 use serde::Serialize;
 use serde_json::{Value, json};
@@ -5,10 +6,7 @@ use serde_json::{Value, json};
 use crate::e2e::testapp::TestApp;
 
 impl TestApp {
-    pub async fn sign_up<Body>(&self, body: &Body) -> Response
-    where
-        Body: Serialize,
-    {
+    pub async fn sign_up<Body: Serialize>(&self, body: &Body) -> Response {
         self.http_client
             .post(format!("{}{}", self.address, "/auth/sign-up"))
             .json(&body)
@@ -17,10 +15,7 @@ impl TestApp {
             .expect("Request failed")
     }
 
-    pub async fn verify_account<Body>(&self, body: &Body) -> Response
-    where
-        Body: Serialize,
-    {
+    pub async fn verify_account<Body: Serialize>(&self, body: &Body) -> Response {
         self.http_client
             .post(format!("{}{}", self.address, "/auth/verify-account"))
             .json(&body)
@@ -29,10 +24,7 @@ impl TestApp {
             .expect("Request failed")
     }
 
-    pub async fn sign_in<Body>(&self, body: &Body) -> Response
-    where
-        Body: Serialize,
-    {
+    pub async fn sign_in<Body: Serialize>(&self, body: &Body) -> Response {
         self.http_client
             .post(format!("{}{}", self.address, "/auth/sign-in"))
             .json(&body)
@@ -41,10 +33,7 @@ impl TestApp {
             .expect("Request failed")
     }
 
-    pub async fn forgot_password<Body>(&self, body: &Body) -> Response
-    where
-        Body: Serialize,
-    {
+    pub async fn forgot_password<Body: Serialize>(&self, body: &Body) -> Response {
         self.http_client
             .post(format!("{}{}", self.address, "/auth/forgot-password"))
             .json(&body)
@@ -53,10 +42,7 @@ impl TestApp {
             .expect("Request failed")
     }
 
-    pub async fn reset_password<Body>(&self, body: &Body) -> Response
-    where
-        Body: Serialize,
-    {
+    pub async fn reset_password<Body: Serialize>(&self, body: &Body) -> Response {
         self.http_client
             .post(format!("{}{}", self.address, "/auth/reset-password"))
             .json(&body)
@@ -81,7 +67,7 @@ impl TestApp {
             .expect("Request failed")
     }
 
-    pub async fn create_and_verify(&mut self, body: &Value) {
+    pub async fn create_and_verify(&self, body: &Value) {
         let response = self.sign_up(body).await;
         assert_eq!(StatusCode::CREATED, response.status());
 
@@ -100,7 +86,7 @@ impl TestApp {
         assert_eq!(StatusCode::OK, verify_response.status());
     }
 
-    pub async fn create_and_sign_in(&mut self, body: &Value) {
+    pub async fn create_and_sign_in(&self, body: &Value, role: Option<UserRole>) {
         self.create_and_verify(body).await;
 
         let signin_data = json!({
@@ -116,5 +102,19 @@ impl TestApp {
             .find(|c| c.name() == self.application_config.session_cookie_name);
 
         assert!(cookie.is_some());
+
+        if let Some(role) = role {
+            sqlx::query!(
+                r#"
+            UPDATE users SET role = $1
+            WHERE email = $2;
+            "#,
+                role as UserRole,
+                body["email"].as_str().unwrap()
+            )
+            .execute(&self.pool)
+            .await
+            .expect("Failed to update user role");
+        }
     }
 }

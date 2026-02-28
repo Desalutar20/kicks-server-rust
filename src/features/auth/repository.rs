@@ -18,7 +18,7 @@ impl AuthRepository {
         Self { pool }
     }
 
-    #[instrument(skip_all, name = "authrepository - get user by email")]
+    #[instrument(skip_all, name = "auth_repository - get user by email")]
     pub async fn get_user_by_email(&self, email: &EmailAddress) -> Result<Option<User>> {
         let record = query!(
             r#"
@@ -67,7 +67,7 @@ impl AuthRepository {
         }
     }
 
-    #[instrument(skip_all, name = "authrepository - get user by id")]
+    #[instrument(skip_all, name = "auth_repository - get user by id")]
     pub async fn get_user_by_id(&self, id: &UserID) -> Result<Option<User>> {
         let record = query!(
             r#"
@@ -116,14 +116,13 @@ impl AuthRepository {
         }
     }
 
-    #[instrument(skip_all, name = "authrepository - create user")]
+    #[instrument(skip_all, name = "auth_repository - create user")]
     pub async fn create_user(&self, user: &NewUser) -> Result<UserID> {
         let record = query!(
             r#"
                 INSERT INTO users (email, password, first_name, last_name, gender, google_id, facebook_id, is_verified)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                 RETURNING id;
-
             "#,
             user.email.as_ref(),
             user.hashed_password.as_ref().map(|p| p.as_ref()),
@@ -140,7 +139,7 @@ impl AuthRepository {
         Ok(UserID::from(record.id))
     }
 
-    #[instrument(skip_all, name = "authrepository - update user")]
+    #[instrument(skip_all, name = "auth_repository - update user")]
     pub async fn update_user(&self, id: &UserID, user: UpdateUser) -> Result<()> {
         query!(
             r#"

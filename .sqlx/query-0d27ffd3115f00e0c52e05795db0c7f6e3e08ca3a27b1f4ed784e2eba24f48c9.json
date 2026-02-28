@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n                INSERT INTO users (email, password, first_name, last_name, gender, google_id, facebook_id, is_verified)\n                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)\n                RETURNING id;\n\n            ",
+  "query": "\n                INSERT INTO users (email, password, first_name, last_name, gender, google_id, facebook_id, is_verified)\n                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)\n                RETURNING id;\n            ",
   "describe": {
     "columns": [
       {
@@ -36,5 +36,5 @@
       false
     ]
   },
-  "hash": "f2fdac5f21b0e79206ad02a7e207045ee7b8b5f4b0f010ddb9c0c9d3df34c190"
+  "hash": "0d27ffd3115f00e0c52e05795db0c7f6e3e08ca3a27b1f4ed784e2eba24f48c9"
 }

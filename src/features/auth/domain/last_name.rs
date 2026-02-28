@@ -37,6 +37,10 @@ impl LastName {
 
         Ok(Self(value))
     }
+
+    pub fn into_inner(self) -> String {
+        self.0
+    }
 }
 
 #[cfg(test)]

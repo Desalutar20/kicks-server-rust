@@ -7,7 +7,7 @@ use crate::features::{
 
 #[derive(Deserialize)]
 pub struct GoogleAccessTokenSuccess {
-    pub access_token: TrimmedString<0, 400>,
+    pub access_token: TrimmedString<1, 400>,
 }
 
 #[derive(Deserialize)]

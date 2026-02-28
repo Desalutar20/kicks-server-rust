@@ -1,6 +1,6 @@
 use crate::features::shared::TrimmedString;
 
-pub type OAuth2Code = TrimmedString<0, 500>;
+pub type OAuth2Code = TrimmedString<1, 500>;
 #[cfg(test)]
 mod test {
     use super::*;

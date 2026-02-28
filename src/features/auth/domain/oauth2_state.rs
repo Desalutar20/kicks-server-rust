@@ -101,13 +101,17 @@ mod tests {
 
     #[test]
     fn too_long_state_should_fail_parse() {
-        let result = OAuth2State::parse(format!("{}|extra", "a".repeat(101)));
+        let result = OAuth2State::parse(format!(
+            "{}{}extra",
+            "a".repeat(101),
+            OAUTH2_STATE_DELIMITER
+        ));
         assert!(result.is_err());
     }
 
     #[test]
     fn invalid_uuid_should_fail_parse() {
-        let result = OAuth2State::parse("not-a-uuid|state".to_string());
+        let result = OAuth2State::parse(format!("not-a-uuid{}state", OAUTH2_STATE_DELIMITER));
         assert!(result.is_err());
     }
 
@@ -126,7 +130,7 @@ mod tests {
     fn valid_state_with_additional_should_pass_parse() {
         let uuid = Uuid::new_v4();
         let extra = "extra_state";
-        let result = OAuth2State::parse(format!("{}|{}", uuid, extra));
+        let result = OAuth2State::parse(format!("{}{}{}", uuid, OAUTH2_STATE_DELIMITER, extra));
         assert!(result.is_ok());
 
         let state = result.unwrap();

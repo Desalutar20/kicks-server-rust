@@ -84,7 +84,7 @@ impl TestApp {
         .expect("Failed to ban user");
     }
 
-    pub async fn get_redis_value(&mut self, key_type: RedisKeyType) -> Option<String> {
+    pub async fn get_redis_value(&self, key_type: RedisKeyType) -> Option<String> {
         let (pattern, prefix) = match key_type {
             RedisKeyType::AccountVerification => (
                 format!("{}*", REDIS_ACCOUNT_VERIFICATION_PREFIX),
@@ -98,6 +98,7 @@ impl TestApp {
 
         let verification_keys = self
             .redis
+            .clone()
             .keys(pattern)
             .await
             .expect("Failed to get redis keys");

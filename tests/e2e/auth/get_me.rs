@@ -12,13 +12,13 @@ use crate::e2e::testapp::{TestApp, setup};
 
 #[tokio::test]
 pub async fn returns_200_when_request_is_valid() {
-    setup(async |mut app: TestApp| {
+    setup(async |app: TestApp| {
         let data = json!({
             "email": "test@gmail.com",
             "password": "s".repeat(PASSWORD_MIN_LENGTH),
         });
 
-        app.create_and_sign_in(&data).await;
+        app.create_and_sign_in(&data, None).await;
 
         let response = app.get_me().await;
         assert_eq!(StatusCode::OK, response.status());
@@ -40,12 +40,12 @@ pub async fn returns_401_when_user_is_not_authorized() {
 
 #[tokio::test]
 pub async fn returns_401_when_user_is_banned() {
-    setup(async |mut app: TestApp| {
+    setup(async |app: TestApp| {
         let data = json!({
             "email": "test@gmail.com",
             "password": "s".repeat(PASSWORD_MIN_LENGTH),
         });
-        app.create_and_sign_in(&data).await;
+        app.create_and_sign_in(&data, None).await;
 
         app.ban_user(data["email"].as_str().unwrap()).await;
 
