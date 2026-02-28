@@ -1,6 +1,10 @@
 use std::{collections::HashMap, sync::Arc};
 
-use axum::{extract::rejection::JsonRejection, http::StatusCode, response::IntoResponse};
+use axum::{
+    extract::rejection::{JsonRejection, QueryRejection},
+    http::StatusCode,
+    response::IntoResponse,
+};
 use derive_more::From;
 
 use redis::RedisError;
@@ -19,6 +23,8 @@ pub enum Error {
     SerdeJson,
     #[from]
     JsonRejection(JsonRejection),
+    #[from]
+    QueryRejection(QueryRejection),
     #[from]
     Database(sqlx::Error),
     #[from]
@@ -61,6 +67,9 @@ impl IntoResponse for Error {
                 Some(self),
             ),
             Error::JsonRejection(rejection) => {
+                (StatusCode::BAD_REQUEST, rejection.body_text(), None)
+            }
+            Error::QueryRejection(rejection) => {
                 (StatusCode::BAD_REQUEST, rejection.body_text(), None)
             }
             Error::Database(_) => (

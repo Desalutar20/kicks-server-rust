@@ -1,6 +1,6 @@
 use crate::features::shared::TrimmedString;
 
-pub type FacebookID = TrimmedString<0, 50>;
+pub type FacebookID = TrimmedString<1, 50>;
 
 #[cfg(test)]
 mod test {

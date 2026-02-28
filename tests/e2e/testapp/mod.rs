@@ -19,6 +19,7 @@ use uuid::Uuid;
 
 use crate::e2e::testapp::setup_database::{setup_postgres, setup_redis};
 
+mod admin;
 mod auth_requests;
 mod database;
 mod setup_database;

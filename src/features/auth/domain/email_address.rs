@@ -20,6 +20,10 @@ impl EmailAddress {
             ]))
         }
     }
+
+    pub fn into_inner(self) -> String {
+        self.0
+    }
 }
 
 impl<'de> Deserialize<'de> for EmailAddress {

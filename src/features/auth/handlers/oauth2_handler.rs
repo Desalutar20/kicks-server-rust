@@ -13,7 +13,7 @@ use axum::{
     response::{IntoResponse, Redirect, Response},
 };
 use axum_extra::extract::{
-    SignedCookieJar,
+    SignedCookieJar, WithRejection,
     cookie::{Cookie, Expiration, SameSite},
 };
 use serde::Deserialize;
@@ -32,7 +32,7 @@ pub struct OAuth2SignInRequestQuery {
 
 pub async fn get_google_redirect_url_v1(
     State(state): State<AppState>,
-    Query(query): Query<OAuth2RedirectUrlRequestQuery>,
+    WithRejection(Query(query), _): WithRejection<Query<OAuth2RedirectUrlRequestQuery>, Error>,
     jar: SignedCookieJar,
 ) -> Result<impl IntoResponse> {
     let (url, oauth_state) = state

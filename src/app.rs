@@ -27,7 +27,10 @@ use crate::{
         redis_client::build_redis_client,
     },
     configuration::{Configuration, app_config::ApplicationConfig},
-    features::auth::{AuthModule, AuthService},
+    features::{
+        admin::AdminModule,
+        auth::{AuthModule, AuthService},
+    },
     middlewares::{error_logging, request_logging},
 };
 
@@ -83,6 +86,8 @@ impl Application {
             http_client.clone(),
         );
 
+        let admin_module = AdminModule::new(database_pool.clone());
+
         let state = AppState(Arc::new(InnerState {
             key: Key::from(config.application.cookie_secret.as_bytes()),
             config: config.application.clone(),
@@ -94,6 +99,7 @@ impl Application {
                 "/api/v1/auth",
                 AuthModule::v1(state.clone(), &config.ratelimit),
             )
+            .nest("/api/v1/admin", admin_module.v1(state.clone()))
             .with_state(state.clone())
             .fallback(handler_404)
             .layer(

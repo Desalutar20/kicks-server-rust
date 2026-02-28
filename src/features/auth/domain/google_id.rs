@@ -1,6 +1,6 @@
 use crate::features::shared::TrimmedString;
 
-pub type GoogleID = TrimmedString<0, 50>;
+pub type GoogleID = TrimmedString<1, 50>;
 #[cfg(test)]
 mod test {
     use super::*;

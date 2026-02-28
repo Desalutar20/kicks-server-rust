@@ -9,7 +9,7 @@ use crate::e2e::testapp::{RedisKeyType, TestApp, setup};
 
 #[tokio::test]
 pub async fn returns_200_when_request_is_valid() {
-    setup(async |mut app: TestApp| {
+    setup(async |app: TestApp| {
         let data = json!({
             "email": "test@gmail.com",
             "password": "s".repeat(PASSWORD_MIN_LENGTH),
@@ -40,7 +40,7 @@ pub async fn returns_200_when_request_is_valid() {
 
 #[tokio::test]
 pub async fn reset_password_successfully_updates_user_password() {
-    setup(async |mut app: TestApp| {
+    setup(async |app: TestApp| {
         let data = json!({
             "email": "test@gmail.com",
             "password": "s".repeat(PASSWORD_MIN_LENGTH),
@@ -145,7 +145,7 @@ async fn returns_400_when_request_is_invalid() {
 
 #[tokio::test]
 async fn returns_400_when_user_is_banned() {
-    setup(async |mut app: TestApp| {
+    setup(async |app: TestApp| {
         let data = json!({
             "email": "test@gmail.com",
             "password": "s".repeat(PASSWORD_MIN_LENGTH),
@@ -178,7 +178,7 @@ async fn returns_400_when_user_is_banned() {
 
 #[tokio::test]
 async fn returns_400_when_email_is_different() {
-    setup(async |mut app: TestApp| {
+    setup(async |app: TestApp| {
         let data = json!({
             "email": "test@gmail.com",
             "password": "s".repeat(PASSWORD_MIN_LENGTH),

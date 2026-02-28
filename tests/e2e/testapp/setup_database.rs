@@ -72,7 +72,7 @@ pub async fn setup_redis() -> (MultiplexedConnection, String, u16, impl AsyncFnO
         .await
         .expect("Failed to connect to Redis");
 
-    let cleanup = async || {
+    let cleanup = async move || {
         container.stop().await.expect("Failed to stop container");
         container.rm().await.expect("Failed to remove container");
     };
