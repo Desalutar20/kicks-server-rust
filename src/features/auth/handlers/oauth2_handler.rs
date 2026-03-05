@@ -3,13 +3,14 @@ use crate::{
     app::AppState,
     configuration::app_config::ApplicationConfig,
     features::auth::{
-        OAuth2Code, OAuth2State, generate_session_cookie,
-        service::oauth2::{OAuth2Provider, OAuth2SignInInput},
+        OAuth2Code, OAuth2Provider, OAuth2State, generate_session_cookie,
+        service::oauth2::OAuth2SignInInput,
     },
     validate_and_parse,
 };
 use axum::{
-    extract::{Query, State},
+    debug_handler,
+    extract::{Path, Query, State},
     response::{IntoResponse, Redirect, Response},
 };
 use axum_extra::extract::{
@@ -30,14 +31,16 @@ pub struct OAuth2SignInRequestQuery {
     code: String,
 }
 
-pub async fn get_google_redirect_url_v1(
+#[debug_handler()]
+pub async fn get_oauth2_redirect_url_v1(
     State(state): State<AppState>,
+    Path(provider): Path<OAuth2Provider>,
     WithRejection(Query(query), _): WithRejection<Query<OAuth2RedirectUrlRequestQuery>, Error>,
     jar: SignedCookieJar,
 ) -> Result<impl IntoResponse> {
     let (url, oauth_state) = state
         .auth_service
-        .generate_oauth2_redirect_url(OAuth2Provider::Google, query.redirect_path)?;
+        .generate_oauth2_redirect_url(provider, query.redirect_path)?;
 
     Ok((
         jar.add(generate_oauth_state_cookie(oauth_state, &state.config)),
@@ -46,61 +49,15 @@ pub async fn get_google_redirect_url_v1(
         .into_response())
 }
 
-pub async fn get_facebook_redirect_url_v1(
+pub async fn oauth_sign_in_v1(
     State(state): State<AppState>,
-    Query(query): Query<OAuth2RedirectUrlRequestQuery>,
-    jar: SignedCookieJar,
-) -> Result<impl IntoResponse> {
-    let (url, oauth_state) = state
-        .auth_service
-        .generate_oauth2_redirect_url(OAuth2Provider::Facebook, query.redirect_path)?;
-
-    Ok((
-        jar.add(generate_oauth_state_cookie(oauth_state, &state.config)),
-        Redirect::to(url.as_str()),
-    )
-        .into_response())
-}
-
-pub async fn google_sign_in_v1(
-    State(state): State<AppState>,
+    Path(provider): Path<OAuth2Provider>,
     Query(query): Query<OAuth2SignInRequestQuery>,
     jar: SignedCookieJar,
 ) -> Result<Response> {
     let parsed = parse_oauth2_request(query, &jar, &state.config)?;
 
-    let (session_id, redirect_path) = state
-        .auth_service
-        .oauth2_sign_in(OAuth2Provider::Google, parsed)
-        .await?;
-
-    let cookie = jar
-        .add(generate_session_cookie(session_id, &state.config))
-        .remove(Cookie::from(
-            state.config.oauth_state_cookie_name.to_string(),
-        ));
-
-    match redirect_path {
-        Some(path) => Ok((
-            cookie,
-            Redirect::to(&format!("{}{}", state.config.client_url, path)),
-        )
-            .into_response()),
-        None => Ok((cookie, Redirect::to(&state.config.client_url)).into_response()),
-    }
-}
-
-pub async fn facebook_sign_in_v1(
-    State(state): State<AppState>,
-    Query(query): Query<OAuth2SignInRequestQuery>,
-    jar: SignedCookieJar,
-) -> Result<Response> {
-    let parsed = parse_oauth2_request(query, &jar, &state.config)?;
-
-    let (session_id, redirect_path) = state
-        .auth_service
-        .oauth2_sign_in(OAuth2Provider::Facebook, parsed)
-        .await?;
+    let (session_id, redirect_path) = state.auth_service.oauth2_sign_in(provider, parsed).await?;
 
     let cookie = jar
         .add(generate_session_cookie(session_id, &state.config))

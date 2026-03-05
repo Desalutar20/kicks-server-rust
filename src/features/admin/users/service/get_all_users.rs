@@ -7,10 +7,7 @@ use crate::{
             domain::{GetAllUsersPagination, GetAllUsersSearch},
             service::AdminUsersService,
         },
-        auth::{
-            EmailAddress, FacebookID, FirstName, GoogleID, LastName, User, UserGender, UserID,
-            UserRole,
-        },
+        auth::{EmailAddress, FirstName, LastName, ProviderID, User, UserGender, UserID, UserRole},
         shared::Metadata,
     },
 };
@@ -27,8 +24,8 @@ pub struct AdminUser {
     pub gender: Option<UserGender>,
     pub is_verified: bool,
     pub is_banned: bool,
-    pub google_id: Option<GoogleID>,
-    pub facebook_id: Option<FacebookID>,
+    pub google_id: Option<ProviderID>,
+    pub facebook_id: Option<ProviderID>,
 }
 
 impl From<User> for AdminUser {

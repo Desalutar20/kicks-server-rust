@@ -1,7 +1,7 @@
 use time::OffsetDateTime;
 
 use crate::features::auth::{
-    EmailAddress, FacebookID, FirstName, GoogleID, HashedPassword, LastName, UserID,
+    EmailAddress, FirstName, HashedPassword, LastName, ProviderID, UserID,
     domain::{user_gender::UserGender, user_role::UserRole},
 };
 
@@ -18,6 +18,6 @@ pub struct User {
     pub gender: Option<UserGender>,
     pub is_verified: bool,
     pub is_banned: bool,
-    pub google_id: Option<GoogleID>,
-    pub facebook_id: Option<FacebookID>,
+    pub google_id: Option<ProviderID>,
+    pub facebook_id: Option<ProviderID>,
 }

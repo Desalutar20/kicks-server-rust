@@ -1,16 +1,16 @@
-use std::{fmt::Display, sync::Arc};
+use std::{collections::HashMap, fmt::Display, sync::Arc};
 
 use redis::{AsyncTypedCommands, aio::MultiplexedConnection};
-use reqwest::Client;
 use uuid::Uuid;
 
 use crate::{
     Error, Result,
     clients::email_client::EmailClient,
-    configuration::{app_config::ApplicationConfig, oauth2_config::OAuth2Config},
+    configuration::app_config::ApplicationConfig,
     features::auth::{
-        EmailAddress, REDIS_ACCOUNT_VERIFICATION_PREFIX, REDIS_RESET_PASSWORD_PREFIX,
-        REDIS_SESSION_PREFIX, User, UserID, repository::AuthRepository,
+        EmailAddress, OAuth2Client, OAuth2Provider, REDIS_ACCOUNT_VERIFICATION_PREFIX,
+        REDIS_RESET_PASSWORD_PREFIX, REDIS_SESSION_PREFIX, User, UserID,
+        repository::AuthRepository,
     },
 };
 
@@ -25,11 +25,10 @@ pub mod verify_account;
 
 pub struct AuthService {
     app_config: ApplicationConfig,
-    oauth2_config: OAuth2Config,
     redis: MultiplexedConnection,
     email_client: Arc<EmailClient>,
     repository: AuthRepository,
-    http_client: Client,
+    providers: HashMap<OAuth2Provider, Box<dyn OAuth2Client>>,
 }
 
 #[derive(Debug)]
@@ -48,19 +47,20 @@ enum TokenType {
 impl AuthService {
     pub fn new(
         app_config: ApplicationConfig,
-        oauth2_config: OAuth2Config,
         redis: MultiplexedConnection,
         email_client: Arc<EmailClient>,
-        http_client: Client,
         repository: AuthRepository,
+        providers: Vec<Box<dyn OAuth2Client>>,
     ) -> Self {
         Self {
             app_config,
-            oauth2_config,
             redis,
             email_client,
-            http_client,
             repository,
+            providers: providers
+                .into_iter()
+                .map(|provider| (provider.provider(), provider))
+                .collect(),
         }
     }
 

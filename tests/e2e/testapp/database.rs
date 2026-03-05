@@ -1,5 +1,5 @@
 use kicksapi::features::auth::{
-    EmailAddress, FacebookID, FirstName, GoogleID, HashedPassword, LastName,
+    EmailAddress, FirstName, HashedPassword, LastName, ProviderID,
     REDIS_ACCOUNT_VERIFICATION_PREFIX, REDIS_RESET_PASSWORD_PREFIX, User, UserGender, UserID,
     UserRole,
 };
@@ -57,10 +57,10 @@ impl TestApp {
                 gender: record.gender,
                 is_verified: record.is_verified,
                 is_banned: record.is_banned,
-                google_id: record.google_id.map(GoogleID::parse).transpose().unwrap(),
+                google_id: record.google_id.map(ProviderID::parse).transpose().unwrap(),
                 facebook_id: record
                     .facebook_id
-                    .map(FacebookID::parse)
+                    .map(ProviderID::parse)
                     .transpose()
                     .unwrap(),
             };

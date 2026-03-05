@@ -1,7 +1,7 @@
 use serde::Deserialize;
 
 use crate::features::{
-    auth::{EmailAddress, FacebookID},
+    auth::{EmailAddress, ProviderID},
     shared::TrimmedString,
 };
 
@@ -29,7 +29,7 @@ pub enum FacebookAccessTokenResponse {
 
 #[derive(Debug, Deserialize)]
 pub struct FacebookUserResponse {
-    pub id: FacebookID,
+    pub id: ProviderID,
     pub email: EmailAddress,
 }
 

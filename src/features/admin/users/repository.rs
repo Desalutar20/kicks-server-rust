@@ -6,8 +6,8 @@ use crate::{
     features::{
         admin::users::service::get_all_users::GetAllUsersInput,
         auth::{
-            EmailAddress, FacebookID, FirstName, GoogleID, HashedPassword, LastName, User,
-            UserGender, UserID, UserRole,
+            EmailAddress, FirstName, HashedPassword, LastName, ProviderID, User, UserGender,
+            UserID, UserRole,
         },
     },
 };
@@ -90,8 +90,8 @@ impl AdminUsersRepository {
                     gender: record.gender,
                     is_verified: record.is_verified,
                     is_banned: record.is_banned,
-                    google_id: record.google_id.map(GoogleID::parse).transpose()?,
-                    facebook_id: record.facebook_id.map(FacebookID::parse).transpose()?,
+                    google_id: record.google_id.map(ProviderID::parse).transpose()?,
+                    facebook_id: record.facebook_id.map(ProviderID::parse).transpose()?,
                 };
 
                 Ok(user)

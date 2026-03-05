@@ -16,13 +16,17 @@ use crate::{
         app_config::ApplicationConfig, oauth2_config::OAuth2Config,
         ratelimit_config::RateLimitConfig,
     },
-    features::auth::repository::AuthRepository,
+    features::auth::{
+        providers::{FacebookProvider, GoogleProvider},
+        repository::AuthRepository,
+    },
     middlewares::authenticate,
 };
 
 mod constants;
 mod domain;
 mod handlers;
+mod providers;
 mod repository;
 mod service;
 
@@ -48,15 +52,27 @@ impl AuthModule {
         http_client: Client,
     ) -> Self {
         let repository = AuthRepository::new(pool);
+        let google_provider = Box::new(GoogleProvider {
+            client_id: oauth2_config.google_client_id,
+            client_secret: oauth2_config.google_client_secret,
+            redirect_url: oauth2_config.google_redirect_url,
+            http_client: http_client.clone(),
+        });
+
+        let facebook_provider = Box::new(FacebookProvider {
+            client_id: oauth2_config.facebook_client_id,
+            client_secret: oauth2_config.facebook_client_secret,
+            redirect_url: oauth2_config.facebook_redirect_url,
+            http_client: http_client.clone(),
+        });
 
         Self {
             auth_service: AuthService::new(
                 app_config,
-                oauth2_config,
                 redis,
                 email_client,
-                http_client,
                 repository,
+                vec![google_provider, facebook_provider],
             ),
         }
     }
@@ -114,8 +130,8 @@ impl AuthModule {
                 )),
             )
             .route(
-                "/google",
-                get(get_google_redirect_url_v1).layer(GovernorLayer::new(
+                "/{provider}",
+                get(get_oauth2_redirect_url_v1).layer(GovernorLayer::new(
                     GovernorConfigBuilder::default()
                         .per_second(60)
                         .burst_size(ratelimit.sign_in)
@@ -124,28 +140,8 @@ impl AuthModule {
                 )),
             )
             .route(
-                "/google/callback",
-                get(google_sign_in_v1).layer(GovernorLayer::new(
-                    GovernorConfigBuilder::default()
-                        .per_second(60)
-                        .burst_size(ratelimit.sign_in)
-                        .finish()
-                        .unwrap(),
-                )),
-            )
-            .route(
-                "/facebook",
-                get(get_facebook_redirect_url_v1).layer(GovernorLayer::new(
-                    GovernorConfigBuilder::default()
-                        .per_second(60)
-                        .burst_size(ratelimit.sign_in)
-                        .finish()
-                        .unwrap(),
-                )),
-            )
-            .route(
-                "/facebook/callback",
-                get(facebook_sign_in_v1).layer(GovernorLayer::new(
+                "/{provider}/callback",
+                get(oauth_sign_in_v1).layer(GovernorLayer::new(
                     GovernorConfigBuilder::default()
                         .per_second(60)
                         .burst_size(ratelimit.sign_in)

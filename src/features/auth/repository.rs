@@ -4,8 +4,8 @@ use tracing::instrument;
 use crate::{
     Result,
     features::auth::{
-        EmailAddress, FacebookID, FirstName, GoogleID, HashedPassword, LastName,
-        domain::{NewUser, UpdateUser, User, UserGender, UserID, UserRole},
+        EmailAddress, FirstName, HashedPassword, LastName, NewUser, ProviderID, UpdateUser, User,
+        UserGender, UserID, UserRole,
     },
 };
 #[derive(Debug)]
@@ -57,8 +57,8 @@ impl AuthRepository {
                 gender: record.gender,
                 is_verified: record.is_verified,
                 is_banned: record.is_banned,
-                google_id: record.google_id.map(GoogleID::parse).transpose()?,
-                facebook_id: record.facebook_id.map(FacebookID::parse).transpose()?,
+                google_id: record.google_id.map(ProviderID::parse).transpose()?,
+                facebook_id: record.facebook_id.map(ProviderID::parse).transpose()?,
             };
 
             Ok(Some(user))
@@ -106,8 +106,8 @@ impl AuthRepository {
                 gender: record.gender,
                 is_verified: record.is_verified,
                 is_banned: record.is_banned,
-                google_id: record.google_id.map(GoogleID::parse).transpose()?,
-                facebook_id: record.facebook_id.map(FacebookID::parse).transpose()?,
+                google_id: record.google_id.map(ProviderID::parse).transpose()?,
+                facebook_id: record.facebook_id.map(ProviderID::parse).transpose()?,
             };
 
             Ok(Some(user))

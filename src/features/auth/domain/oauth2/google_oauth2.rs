@@ -1,7 +1,7 @@
 use serde::Deserialize;
 
 use crate::features::{
-    auth::{EmailAddress, GoogleID},
+    auth::{EmailAddress, ProviderID},
     shared::TrimmedString,
 };
 
@@ -25,7 +25,7 @@ pub enum GoogleAccessTokenResponse {
 
 #[derive(Deserialize)]
 pub struct GoogleUserResponse {
-    pub sub: GoogleID,
+    pub sub: ProviderID,
     pub email: EmailAddress,
     pub email_verified: bool,
 }

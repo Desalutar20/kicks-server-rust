@@ -19,6 +19,8 @@ pub enum Error {
     Forbidden,
     Conflict(String),
     Internal(String),
+    DomainValidationError(Vec<String>),
+    ValidationErrors(HashMap<String, Vec<String>>),
     #[from(serde_json::Error)]
     SerdeJson,
     #[from]
@@ -35,9 +37,6 @@ pub enum Error {
     Io(std::io::Error),
     #[from]
     Reqwest(reqwest::Error),
-    #[from]
-    DomainValidationError(Vec<String>),
-    ValidationErrors(HashMap<String, Vec<String>>),
 }
 
 #[derive(Serialize)]
@@ -51,16 +50,6 @@ impl IntoResponse for Error {
             Error::Unauthorized => (StatusCode::UNAUTHORIZED, "Unauthorized".to_owned(), None),
             Error::Forbidden => (StatusCode::FORBIDDEN, "Forbidden".to_owned(), None),
             Error::Conflict(message) => (StatusCode::BAD_REQUEST, message, None),
-            Error::Internal(_) => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Internal server error".to_owned(),
-                Some(self),
-            ),
-            Error::Io(_) => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Internal server error".to_owned(),
-                Some(self),
-            ),
             Error::SerdeJson => (
                 StatusCode::BAD_REQUEST,
                 String::from("Invalid request"),
@@ -72,22 +61,12 @@ impl IntoResponse for Error {
             Error::QueryRejection(rejection) => {
                 (StatusCode::BAD_REQUEST, rejection.body_text(), None)
             }
-            Error::Database(_) => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Internal server error".to_owned(),
-                Some(self),
-            ),
-            Error::Redis(_) => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Internal server error".to_owned(),
-                Some(self),
-            ),
-            Error::Smtp(_) => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Internal server error".to_owned(),
-                Some(self),
-            ),
-            Error::Reqwest(_) => (
+            Error::Database(_)
+            | Error::Redis(_)
+            | Error::Smtp(_)
+            | Error::Reqwest(_)
+            | Error::Internal(_)
+            | Error::Io(_) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Internal server error".to_owned(),
                 Some(self),

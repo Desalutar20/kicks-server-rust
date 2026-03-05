@@ -1,10 +1,4 @@
-use crate::features::auth::{
-    HashedPassword,
-    domain::{
-        facebook_id::FacebookID, first_name::FirstName, google_id::GoogleID, last_name::LastName,
-        user_gender::UserGender,
-    },
-};
+use crate::features::auth::{FirstName, HashedPassword, LastName, ProviderID, UserGender};
 
 #[derive(Debug)]
 pub struct UpdateUser {
@@ -13,6 +7,6 @@ pub struct UpdateUser {
     pub last_name: Option<LastName>,
     pub gender: Option<UserGender>,
     pub is_verified: Option<bool>,
-    pub google_id: Option<GoogleID>,
-    pub facebook_id: Option<FacebookID>,
+    pub google_id: Option<ProviderID>,
+    pub facebook_id: Option<ProviderID>,
 }
